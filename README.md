@@ -7,7 +7,7 @@ Set the `daemonName` variable and then enter in the commands to run in the doCom
 run with `bash daemon.sh`
 
 
-##TODO
+## TODO
 - [ ] update and improve documentation
 - [x] logging
 - [ ] improve logging
