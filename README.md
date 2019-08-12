@@ -8,7 +8,9 @@ run with `bash daemon.sh`
 
 
 ##TODO
-- update and improve documentation
-- logging
-- ???
-- profit
+- [ ] update and improve documentation
+- [x] logging
+- [ ] improve logging
+- [ ] better error handling
+- [ ] ???
+- [ ] profit
