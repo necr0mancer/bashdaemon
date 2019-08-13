@@ -3,7 +3,7 @@
 # skeleton of a bash daemon
 # (work in progress)
 
-daemonName="DAEMON-NAME"
+daemonName="DAEMON_NAME"
 
 pidDir="."
 pidFile="$pidDir/$daemonName.pid"
@@ -47,28 +47,74 @@ setupDaemon() {
 
 startDaemon() {
 	setupDaemon # make sure directories are there first
+	if [[ `checkDaemon` = 1 ]]; then
+		echo " * \033[31;5;148mError\033[39m; $daemonName is already running."
+		exit 1
+	fi
+	echo " * Starting $daemonName with PID: $myPid."
+	echo "$myPid" > "$pidFile"
+	log '*** '`date +"%Y-%m-%d"`": Starting up $daemonName."
 
 	loop
 }
 
 stopDaemon() {
-
+	if [ `checkDaemon` -eq 0 ]; then
+		echo " * \033[31;5;148mError\033[39m: $daemonName is not running."
+		exit 1
+	fi
 	echo " * Stopping $daemonName"
 	log '*** '`date +"%Y-%m-%d"`": $daemonName stopped."
+
+	if [ ! -z `cat $pidFile` ]; then
+		kill -9 `cat "$pidFile"` &> /dev/null
+	fi
 }
 
 statusDaemon() {
+	if [ `checkDaemon` -eq 1 ]; then
+		echo " * $daemonName is running."
+	else
+		echo " * $daemonName isn't running."
+	fi
 
 	exit 0
 }
 
 restartDaemon() {
+	if [[ `checkDaemon` = 0 ]]; then
+		echo "$daemonName isn't running."
+		exit 1
+	fi
 
 	stopDaemon
 	startDaemon
 }
 
 checkDaemon() {
+
+	if [ -z "$oldPid" ]; then
+		return 0
+	elif [[ `ps aux | grep "$oldPid" | grep -v grep` > /dev/null ]]; then
+		if [ -f "$pidFile" ]; then
+			if [[ `cat "$pidFile"` = "$oldPid" ]]; then
+				# daemon is running.
+				# echo 1
+				return 1
+			else
+				#daemon isn't running.
+				return 0
+			fi
+		fi
+	elif [[ `ps aux | grep "$daemonName" | grep -v grep | grep -v "$myPid" | grep -v "0:00.00"` > /dev/null ]]; then
+		# daemon is running but wrong PID, so restart it
+		log '*** '`date +%Y-%m-%d"`": $daemonName running with invalid PID; restarting."
+		restartDaemon
+		return 1
+	else
+		# daemon not running
+		return 0
+	fi
 
 	return 1
 }
@@ -90,13 +136,11 @@ loop() {
 	fi
 
 	loop
-
 }
 
 log() {
 
 	echo "$1" >> "$logFile"
-
 }
 
 
@@ -105,7 +149,7 @@ log() {
 ###############################################################################
 
 if [ -f "$pidFile" ]; then
-	oldPid=`cat "pidFile"`
+	oldPid=`cat "$pidFile"`
 fi
 checkDaemon
 case "$1" in
